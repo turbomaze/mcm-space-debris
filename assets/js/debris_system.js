@@ -2,6 +2,7 @@
 |   Space Debris   |
 |      System      |
 | @author Anthony  |
+| @author Jessy    |
 | @version 0.1     |
 | @date 2016/01/28 |
 | @edit 2016/01/28 |
@@ -10,7 +11,7 @@
 //the DebrisSystem object models collections of particles
 var DebrisSystem = (function() {
   /**********
-   * config */
+   * config */s
 
   /************
    * privates */
@@ -22,6 +23,7 @@ var DebrisSystem = (function() {
     this.altDist = altDist; //particle distance from surface
     this.sizeDist = sizeDist; //particle size
     this.N = N; //how many particles there are
+    this.t = 0; //internal time
 
     //get the particles
     this.particles = [];
@@ -30,6 +32,7 @@ var DebrisSystem = (function() {
       var size = this.sizeDist.sample();
       var tumble = new Tumble(0, 0, 0);
       var angle = this.angleDist.sample();
+      var speed = 
       console.log('set angle '+angle);
       var alt = this.altDist.sample();
       var a = [1, 0, 0]; //axis 1
@@ -37,16 +40,35 @@ var DebrisSystem = (function() {
  
       //add the particle
       this.particles.push(new DebrisParticle(
-        size, tumble, function positionFunc(t) {
-          console.log('angle '+angle);
-          var x = alt*a[0]*Math.cos(angle+0.01*t) + alt*b[0]*Math.sin(angle+0.01*t);
-          var y = alt*a[1]*Math.cos(angle+0.01*t) + alt*b[1]*Math.sin(angle+0.01*t);
-          var z = alt*a[2]*Math.cos(angle+0.01*t) + alt*b[2]*Math.sin(angle+0.01*t);
-          return [x, y, z];
-        }
+        size, tumble, (function(c1,c2) {
+          return function positionFunc(t) {
+            var x = c1*a[0]*Math.cos(c2+0.01*t) + c1*b[0]*Math.sin(c2+0.01*t);
+            var y = c1*a[1]*Math.cos(c2+0.01*t) + c1*b[1]*Math.sin(c2+0.01*t);
+            var z = c1*a[2]*Math.cos(c2+0.01*t) + c1*b[2]*Math.sin(c2+0.01*t);
+            return [x, y, z];
+          };
+        })(alt, angle)
       ));
     }
   };
 
+  //step the simulation one time-step
+  obj.prototype.update = function() {
+    this.t++;
+    var self = this;
+    this.particles.forEach(function(particle) {
+      particle.pos = particle.r(self.t);
+    });
+  };
   return obj;
 })();
+
+
+
+
+
+
+
+
+
+
