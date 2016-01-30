@@ -11,7 +11,7 @@
 //the DebrisSystem object models collections of particles
 var DebrisSystem = (function() {
   /**********
-   * config */
+   * config */s
 
   /************
    * privates */
