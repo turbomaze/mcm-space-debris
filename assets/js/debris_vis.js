@@ -30,9 +30,9 @@ var DebrisVis = (function() {
 
     //set up the system
     system = new DebrisSystem(
-      new Distribution(0, 2*Math.PI), //angle offset in radians
-      new Distribution(10, 100), //altitude in km
-      new Distribution(1, 10), //size in cm
+      new Distribution([0, 2*Math.PI], [1]), //angle offset in radians
+      new Distribution([10, 100], [1]), //altitude in km
+      new Distribution([1, 10, 100], [0.9, 0.1]), //size in cm
       N //number of particles
     );
 
@@ -46,9 +46,7 @@ var DebrisVis = (function() {
     Crush.clear(ctx, 'black'); 
 
     system.particles.forEach(function(particle) {
-      console.log('asked for part pos');
       var r = particle.r(t); 
-      console.log(particle.r(0));
       var shifted = [
         r[0] + DIMS[0]/2,
         r[1] + DIMS[1]/2,
@@ -58,7 +56,7 @@ var DebrisVis = (function() {
     });
 
     t++;
-    //requestAnimationFrame(render);
+    requestAnimationFrame(render);
   }
   
 

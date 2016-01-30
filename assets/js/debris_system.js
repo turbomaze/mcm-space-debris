@@ -30,7 +30,6 @@ var DebrisSystem = (function() {
       var size = this.sizeDist.sample();
       var tumble = new Tumble(0, 0, 0);
       var angle = this.angleDist.sample();
-      console.log('set angle '+angle);
       var alt = this.altDist.sample();
       var a = [1, 0, 0]; //axis 1
       var b = [0, 1, 0]; //axis 2
@@ -38,7 +37,6 @@ var DebrisSystem = (function() {
       //add the particle
       this.particles.push(new DebrisParticle(
         size, tumble, function positionFunc(t) {
-          console.log('angle '+angle);
           var x = alt*a[0]*Math.cos(angle+0.01*t) + alt*b[0]*Math.sin(angle+0.01*t);
           var y = alt*a[1]*Math.cos(angle+0.01*t) + alt*b[1]*Math.sin(angle+0.01*t);
           var z = alt*a[2]*Math.cos(angle+0.01*t) + alt*b[2]*Math.sin(angle+0.01*t);
