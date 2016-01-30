@@ -19,7 +19,8 @@ var DebrisSystem = (function() {
 
   /***********
    * exports */
-  var obj = function(angleDist, altDist, incDist, sizeDist, N) {
+  var obj = function(altStart, angleDist, altDist, incDist, sizeDist, N) {
+    this.altStart = altStart; //radius of earth
     this.angleDist = angleDist; //where in its orbit particles are at t=0 
     this.altDist = altDist; //particle distance from surface
     this.incDist = incDist; //inclination from equatorial plane
@@ -66,12 +67,13 @@ var DebrisSystem = (function() {
     var T = speed*TIME_CONST*this.t;
     var cosAngT = Math.cos(particle.angle + T);
     var sinAngT = Math.sin(particle.angle + T);
-    var x = particle.alt*particle.a[0]*cosAngT +
-            particle.alt*particle.b[0]*sinAngT;
-    var y = particle.alt*particle.a[1]*cosAngT +
-            particle.alt*particle.b[1]*sinAngT;
-    var z = particle.alt*particle.a[2]*cosAngT +
-            particle.alt*particle.b[2]*sinAngT;
+    var altAndRad = particle.alt + this.altStart;
+    var x = altAndRad*particle.a[0]*cosAngT +
+            altAndRad*particle.b[0]*sinAngT;
+    var y = altAndRad*particle.a[1]*cosAngT +
+            altAndRad*particle.b[1]*sinAngT;
+    var z = altAndRad*particle.a[2]*cosAngT +
+            altAndRad*particle.b[2]*sinAngT;
     return [x, y, z];
   };
 

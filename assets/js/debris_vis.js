@@ -16,7 +16,10 @@ var DebrisVis = (function() {
   var N = 10000; //number of particles
   var RENDER_EVERY = 5; //render every this many particles
   var PART_COL = 'rgba(255,255,255,0.6)'; //color of the particles
-  var SIZE_SCALE = 2; //pixel to log particle size coeff
+  var EARTH_COL = 'rgba(0,50,100,1)'; //color of the particles
+  var PSIZE_SCALE = 2; //pixel to log particle size coeff
+  var ALT_SCALE = 0.02; //altitude to px coeff
+  var ALT_START = 6000; //radius of earth basically
 
   /************
    * privates */
@@ -37,8 +40,9 @@ var DebrisVis = (function() {
 
     //set up the system
     system = new DebrisSystem(
+      ALT_START,
       new Distribution([0, 2*Math.PI], [1]), //angle offset in radians
-      new Distribution([10, 200], [1]), //altitude in km
+      new Distribution([100, 1000], [1]), //altitude in km
       new Distribution([
         0, 20, 40, 60, 80, 100, 140
       ], [
@@ -61,31 +65,37 @@ var DebrisVis = (function() {
   function render() {
     ctxs.forEach(function(ctx) {
       Crush.clear(ctx, 'black');  
+
+      //paint earth
+      Crush.drawPoint(
+        ctx, [DIMS[0]/2, DIMS[1]/2], ALT_SCALE*ALT_START, EARTH_COL
+      );
     });
+
 
     system.particles.forEach(function(particle, idx) {
       if (idx % RENDER_EVERY !== 0) return;
 
-      var psize = SIZE_SCALE*Math.log(1 + particle.size);
+      var psize = PSIZE_SCALE*Math.log(1 + particle.size);
 
       //canvas 0
       var shifted0 = [
-        particle.pos[0] + DIMS[0]/2,
-        particle.pos[1] + DIMS[1]/2
+        ALT_SCALE*particle.pos[0] + DIMS[0]/2,
+        ALT_SCALE*particle.pos[1] + DIMS[1]/2
       ];
       Crush.drawPoint(ctxs[0], shifted0, psize, PART_COL);
 
       //canvas 1
       var shifted1 = [
-        particle.pos[2] + DIMS[0]/2,
-        particle.pos[0] + DIMS[1]/2
+        ALT_SCALE*particle.pos[2] + DIMS[0]/2,
+        ALT_SCALE*particle.pos[0] + DIMS[1]/2
       ];
       Crush.drawPoint(ctxs[1], shifted1, psize, PART_COL);
 
       //canvas 2
       var shifted2 = [
-        particle.pos[2] + DIMS[0]/2,
-        particle.pos[1] + DIMS[1]/2
+        ALT_SCALE*particle.pos[2] + DIMS[0]/2,
+        ALT_SCALE*particle.pos[1] + DIMS[1]/2
       ];
       Crush.drawPoint(ctxs[2], shifted2, psize, PART_COL);
     });
