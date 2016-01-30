@@ -2,6 +2,7 @@
 |   Space Debris   |
 |     Particle     |
 | @author Anthony  |
+| @author Jessy    |
 | @version 0.1     |
 | @date 2016/01/28 |
 | @edit 2016/01/28 |
@@ -30,7 +31,8 @@ var DebrisParticle = (function() {
     this.id = Math.random().toString(36);
     this.size = size;
     this.tumble = tumble;
-    this.r = positionFunc;
+    this.r = positionFunc; // calculates the position of particle at t
+    this.pos = this.r(0); // stores coords of particle at any moment
   };
 
   return obj;

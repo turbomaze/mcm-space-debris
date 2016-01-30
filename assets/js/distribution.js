@@ -1,6 +1,7 @@
 /******************\
 |   Distribution   |
 | @author Anthony  |
+| @author Jessy    |
 | @version 0.1     |
 | @date 2016/01/28 |
 | @edit 2016/01/28 |

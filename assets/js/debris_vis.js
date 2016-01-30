@@ -2,6 +2,7 @@
 |   Space Debris   |
 |   Visualization  |
 | @author Anthony  |
+| @author Jessy    |
 | @version 0.1     |
 | @date 2016/01/28 |
 | @edit 2016/01/28 |
@@ -36,9 +37,6 @@ var DebrisVis = (function() {
       N //number of particles
     );
 
-    //init misc variables
-    t = 0;
-    
     render();
   }
 
@@ -46,16 +44,15 @@ var DebrisVis = (function() {
     Crush.clear(ctx, 'black'); 
 
     system.particles.forEach(function(particle) {
-      var r = particle.r(t); 
       var shifted = [
-        r[0] + DIMS[0]/2,
-        r[1] + DIMS[1]/2,
-        r[2]
-      ];
+          particle.pos[0] + DIMS[0]/2,
+          particle.pos[1] + DIMS[1]/2,
+          particle.pos[2]
+        ];
       Crush.drawPoint(ctx, shifted, particle.size, 'white');
     });
 
-    t++;
+    system.update();
     requestAnimationFrame(render);
   }
   
