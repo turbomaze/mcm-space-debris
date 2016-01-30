@@ -56,6 +56,8 @@ var DebrisVis = (function() {
       N //number of particles
     );
 
+    system = new DebrisSystem(ALT_START);
+
     ctxs.forEach(function(ctx) {
       Crush.clear(ctx, 'black');  
     });
@@ -77,6 +79,7 @@ var DebrisVis = (function() {
       if (idx % RENDER_EVERY !== 0) return;
 
       var psize = PSIZE_SCALE*Math.log(1 + particle.size);
+      psize = 1.5;
 
       //canvas 0
       var shifted0 = [

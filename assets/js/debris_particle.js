@@ -27,11 +27,12 @@ var DebrisParticle = (function() {
 
   /***********
    * exports */
-  var obj = function(size, tumble, alt, angle, a, b) {
+  var obj = function(size, tumble, apo, pero, angle, a, b) {
     this.id = Math.random().toString(36);
     this.size = size;
     this.tumble = tumble;
-    this.alt = alt; //altitude of particle
+    this.apo = apo; //altitude at apogee 
+    this.pero = pero; //altitude at perogee 
     this.angle = angle; //angle of particle
     this.a = a; //axis 1 of orbit 
     this.b = b; //axis 2 of orbit 

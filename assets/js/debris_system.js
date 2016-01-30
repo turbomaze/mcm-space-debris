@@ -20,32 +20,53 @@ var DebrisSystem = (function() {
   /***********
    * exports */
   var obj = function(altStart, angleDist, altDist, incDist, sizeDist, N) {
-    this.altStart = altStart; //radius of earth
-    this.angleDist = angleDist; //where in its orbit particles are at t=0 
-    this.altDist = altDist; //particle distance from surface
-    this.incDist = incDist; //inclination from equatorial plane
-    this.sizeDist = sizeDist; //particle size
-    this.N = N; //how many particles there are
     this.t = 0; //internal time
-
-    //get the particles
+    this.altStart = altStart; //radius of earth
     this.particles = [];
-    for (var ai = 0; ai < this.N; ai++) {
-      //get particle properties
-      var size = this.sizeDist.sample();
-      var tumble = new Tumble(0, 0, 0);
-      var angle = this.angleDist.sample();
-      var alt = this.altDist.sample();
-      var inc = this.incDist.sample();
-      var a = [1, 0, 0]; //axis 1
-      var b = [
-        0, Math.cos((180/Math.PI)*inc), Math.sin((180/Math.PI)*inc)
-      ]; //axis 2
+
+    //sample from given distributions
+    if (arguments.length > 1) {
+      this.angleDist = angleDist; //where in its orbit particles are at t=0 
+      this.altDist = altDist; //particle distance from surface
+      this.incDist = incDist; //inclination from equatorial plane
+      this.sizeDist = sizeDist; //particle size
+      this.N = N; //how many particles there are
+
+      //get the particles
+      for (var ai = 0; ai < this.N; ai++) {
+        //get particle properties
+        var size = this.sizeDist.sample();
+        var tumble = new Tumble(0, 0, 0);
+        var angle = this.angleDist.sample();
+        var apo = this.altDist.sample();
+        var pero = this.altDist.sample();
+        var inc = this.incDist.sample();
+        var a = [1, 0, 0]; //axis 1
+        var b = [
+          0, Math.cos((180/Math.PI)*inc), Math.sin((180/Math.PI)*inc)
+        ]; //axis 2
  
-      //add the particle
-      this.particles.push(new DebrisParticle(
-        size, tumble, alt, angle, a, b
-      ));
+        //add the particle
+        this.particles.push(new DebrisParticle(
+          size, tumble, apo, pero, angle, a, b
+        ));
+      }
+    } else { //use data instead of distributions
+      var self = this;
+      debParticles.forEach(function(particle) {
+        var tumble = new Tumble(0, 0, 0);
+        var inc = particle['inclination'];
+        var a = [1, 0, 0]; //axis 1
+        var b = [
+          0, Math.cos((180/Math.PI)*inc), Math.sin((180/Math.PI)*inc)
+        ]; //axis 2
+        self.particles.push(
+          new DebrisParticle(
+            particle['radarCross'], tumble, particle['apogeeAlt'],
+            particle['perogeeAlt'], 2*Math.PI*Math.random(), a, b
+          )
+        ); 
+      });
     }
 
     this.update();
@@ -63,17 +84,18 @@ var DebrisSystem = (function() {
 
   //get the location of a particle at the given time
   obj.prototype.getParticleLoc = function(particle) {
-    var speed = Math.sqrt(1/particle.alt);
+    var speed = Math.sqrt(2/(particle.apo+particle.pero));
     var T = speed*TIME_CONST*this.t;
     var cosAngT = Math.cos(particle.angle + T);
     var sinAngT = Math.sin(particle.angle + T);
-    var altAndRad = particle.alt + this.altStart;
-    var x = altAndRad*particle.a[0]*cosAngT +
-            altAndRad*particle.b[0]*sinAngT;
-    var y = altAndRad*particle.a[1]*cosAngT +
-            altAndRad*particle.b[1]*sinAngT;
-    var z = altAndRad*particle.a[2]*cosAngT +
-            altAndRad*particle.b[2]*sinAngT;
+    var apoAndRad = particle.apo + this.altStart;
+    var peroAndRad = particle.pero + this.altStart;
+    var x = apoAndRad*particle.a[0]*cosAngT +
+            peroAndRad*particle.b[0]*sinAngT;
+    var y = apoAndRad*particle.a[1]*cosAngT +
+            peroAndRad*particle.b[1]*sinAngT;
+    var z = apoAndRad*particle.a[2]*cosAngT +
+            peroAndRad*particle.b[2]*sinAngT;
     return [x, y, z];
   };
 
