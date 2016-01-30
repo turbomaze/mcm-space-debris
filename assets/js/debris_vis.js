@@ -13,8 +13,8 @@ var DebrisVis = (function() {
   /**********
    * config */
   var DIMS = [400, 400]; //canvas dimensions in pixels
-  var N = 100000; //number of particles
-  var RENDER_EVERY = 60; //render every this many particles
+  var N = 10000; //number of particles
+  var RENDER_EVERY = 5; //render every this many particles
   var PART_COL = 'rgba(255,255,255,0.6)'; //color of the particles
   var SIZE_SCALE = 2; //pixel to log particle size coeff
 
@@ -52,6 +52,9 @@ var DebrisVis = (function() {
       N //number of particles
     );
 
+    ctxs.forEach(function(ctx) {
+      Crush.clear(ctx, 'black');  
+    });
     render();
   }
 
@@ -74,28 +77,57 @@ var DebrisVis = (function() {
 
       //canvas 1
       var shifted1 = [
-        particle.pos[2] + DIMS[1]/2,
-        particle.pos[0] + DIMS[0]/2
+        particle.pos[2] + DIMS[0]/2,
+        particle.pos[0] + DIMS[1]/2
       ];
       Crush.drawPoint(ctxs[1], shifted1, psize, PART_COL);
 
       //canvas 2
       var shifted2 = [
-        particle.pos[2] + DIMS[1]/2,
-        particle.pos[1] + DIMS[0]/2
+        particle.pos[2] + DIMS[0]/2,
+        particle.pos[1] + DIMS[1]/2
       ];
       Crush.drawPoint(ctxs[2], shifted2, psize, PART_COL);
     });
 
-    var start = +new Date();
     system.update();
-    if (Math.random() < 0.1) console.log(+new Date() - start);
     requestAnimationFrame(render);
   }
   
 
   /***********
    * helpers */
+  function getProjOnPlane(pt, n) {
+    return sub(pt, smult(dot(pt, n), n));
+  }
+
+  function smult(s, a) {
+    return a.map(function(comp) {
+      return comp*s;
+    });
+  }
+
+  function sub(a, b) {
+    return a.map(function(c, idx) {
+      return c - b[idx];
+    });
+  }
+
+  function norm(a) {
+    var mag = Math.sqrt(a.reduce(function(sum, comp) {
+      return sum + comp*comp;  
+    }));
+    return a.map(function(comp) {
+      return comp/mag;  
+    });
+  }
+
+  function dot(a, b) {
+    return a.reduce(function(sum, c, idx) {
+      return sum + c*b[idx];
+    });
+  }
+
   function $s(sel) {
     return document.querySelector(sel);
   }

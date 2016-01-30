@@ -12,7 +12,7 @@
 var DebrisSystem = (function() {
   /**********
    * config */
-  var TIME_CONST = 0.001;
+  var TIME_CONST = 0.1;
 
   /************
    * privates */
@@ -38,7 +38,7 @@ var DebrisSystem = (function() {
       var inc = this.incDist.sample();
       var a = [1, 0, 0]; //axis 1
       var b = [
-        0, Math.cos((180/Math.PI)*inc), (180/Math.PI)*Math.sin(inc)
+        0, Math.cos((180/Math.PI)*inc), Math.sin((180/Math.PI)*inc)
       ]; //axis 2
  
       //add the particle
@@ -62,7 +62,7 @@ var DebrisSystem = (function() {
 
   //get the location of a particle at the given time
   obj.prototype.getParticleLoc = function(particle) {
-    var speed = Math.sqrt(particle.alt);
+    var speed = Math.sqrt(1/particle.alt);
     var T = speed*TIME_CONST*this.t;
     var cosAngT = Math.cos(particle.angle + T);
     var sinAngT = Math.sin(particle.angle + T);
