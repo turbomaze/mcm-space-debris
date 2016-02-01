@@ -16,7 +16,7 @@ var Simulation = (function() {
   var TIME_STEP = 0.15;
   var PROB_LAUNCH_EA_STEP = 10*TIME_STEP;
   var SAVE_EVERY = 20;
-  var NUM_TRIALS = 10;
+  var NUM_TRIALS = 2;
   var DEBUG = false;
 
   /*************
@@ -29,15 +29,50 @@ var Simulation = (function() {
 	var removalCampaign;
   var t, steps;
   var recalculatedAtEnd;
+ //from http://stackoverflow.com/questions/4288759/asynchronous-for-cycle-in-javascript
+  function asyncLoop(iterations, func, callback) {
+    var index = 0;
+    var done = false;
+    var loop = {
+      next: function() {
+        if (done) {
+          return;
+        }
+  
+        if (index < iterations) {
+          index++;
+          func(loop);
+        } else {
+          done = true;
+          callback();
+        }
+      },
+  
+      iteration: function() {
+        return index - 1;
+      },
+  
+      break: function() {
+        done = true;
+        callback();
+      }
+    };
+    loop.next();
+    return loop;
+  }
 
 	/*********************
    * working functions */
   function initSimulation() {
     initVars();
 
-    runExperiment(666, function(data) {
-      console.log(data); 
-    });
+		asyncLoop(NUM_TRIALS, function(loop) {
+      runExperiment(666, function(data) {
+        console.log(data); 
+        initVars();
+				loop.next();
+      });
+    }, function() {console.log('Experiment over.');});
 	}
 
   function runExperiment(numSteps, cb, data) {
