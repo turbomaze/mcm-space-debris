@@ -23,6 +23,24 @@ var DebrisSystem = (function() {
     this.t = 0; //internal time
     this.altStart = altStart; //radius of earth
     this.particles = [];
+    this.LEO = function() {
+      var self = this;
+      return self.particles.filter(function(particle){
+        particle.pero >= 160 && particle.pero < 2000
+      });
+    };
+    this.MEO = function(){
+      var self = this;
+      return self.particles.filter(function(particle)){
+        particle.pero >= 2000 && particle.pero < 35786
+      });
+    };
+    this.GEO = function(){
+      var self = this;
+      return self.particles.filter(function(particle){
+        particle.pero === 35786
+      });
+    };
 
     //sample from given distributions
     if (arguments.length > 1) {
@@ -36,6 +54,7 @@ var DebrisSystem = (function() {
       for (var ai = 0; ai < this.N; ai++) {
         //get particle properties
         var size = this.sizeDist.sample();
+        var mass = 'undefined';
         var tumble = new Tumble(0, 0, 0);
         var angle = this.angleDist.sample();
         var apo = this.altDist.sample();
@@ -48,7 +67,7 @@ var DebrisSystem = (function() {
  
         //add the particle
         this.particles.push(new DebrisParticle(
-          size, tumble, apo, pero, angle, a, b
+          size, mass, tumble, apo, pero, angle, a, b
         ));
       }
     } else { //use data instead of distributions
