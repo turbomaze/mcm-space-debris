@@ -13,26 +13,26 @@ var DebrisParticle = (function() {
 
   /*************
    * constants */
-  var MASS_SIZE_RATIO = 1;
+  var LEO = 0, MEO = 1, GEO = 2, XO = 3;
 
   /************
    * privates */
 
   /***********
    * exports */
-  var obj = function(bin, mass, birth, tumbleRate) {
+  var obj = function(pero, size, mass, deorbit, tumbleRate) {
     this.id = Math.random().toString(36);
-    this.bin = bin; //leo, meo, geo
+    this.pero = pero; //perogee
+    this.bin = this.pero < 2000 ? LEO : (
+      pero < 35700 ? MEO : (pero > 35700 && pero < 35900 ? GEO : XO) 
+    );
+    this.size = size; //cross sectional area
     this.mass = mass;
-    this.size = this.mass/MASS_SIZE_RATIO;
-    this.birth = birth; //when this particle started
+    this.deorbit = deorbit; //when this particle started
     this.tumbleRate = tumbleRate;
 
     this.targetted = false; //scheduled for removal?
 		this.risk = Math.random(); //how risky it is
-  };
-  obj.prototype.decayOrbit = function() {
-    this.bin--;
   };
 
   return obj;

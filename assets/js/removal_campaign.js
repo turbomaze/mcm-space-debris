@@ -81,6 +81,9 @@ var RemovalCampaign = (function() {
 		this.debSys = debSys;
 		this.missionQueue = [];
   };
+  obj.prototype.find = function(p) {
+    return this.debSys.getIdxInRisk(p);
+  }
   obj.prototype.getBestParticleToRemove = function() {
     var idx = 0;
     while (this.debSys.particlesArrRisk[idx].targetted) {
