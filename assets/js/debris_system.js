@@ -31,7 +31,7 @@ var DebrisSystem = (function() {
     };
     this.MEO = function(){
       var self = this;
-      return self.particles.filter(function(particle)){
+      return self.particles.filter(function(particle){
         particle.pero >= 2000 && particle.pero < 35786
       });
     };

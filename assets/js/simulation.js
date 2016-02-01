@@ -1,6 +1,6 @@
 /******************\
 |   Space Debris   |
-|   Visualization  |
+|    Simulation    |
 | @author Anthony  |
 | @author Jessy    |
 | @version 0.1     |
@@ -14,16 +14,15 @@ var Simulation = (function() {
    * config */
   var N = 10000; //number of particles to start
   var ALT_START = 6000; //radius of earth basically
-  var EXPLOSION_PARAM = 1/365; 
+  var EXPLOSION_PARAM = 1/365;
   var EXPLOSION_GEN = [157, 961, 119]; // number of particles generated in each
-
 
   /************
    * privates */
   var sys_time = 0;
   var scheduled = [];
 
-  /***********
+  /******************
    * work functions */
   function initSimulation() {
     next_time = -Math.log(1.0-Math.random))/EXPLOSION_PARAM; // number of days until next explosion
@@ -37,7 +36,7 @@ var Simulation = (function() {
       new Distribution([
         0, 20, 40, 60, 80, 100, 140
       ], [
-        80, 50, 20, 200, 150, 10 
+        80, 50, 20, 200, 150, 10
       ]), //inclination in deg
       new Distribution([
         0.1, 1, 10, 20
@@ -49,7 +48,7 @@ var Simulation = (function() {
     system = new DebrisSystem(ALT_START);
 
     //check for scheduled events
-    for(int i = 0; i < scheduled.length; i++) {
+    for(var i = 0; i < scheduled.length; i++) {
       if(sys_time != scheduled[i][0]) { continue; }
       switch(scheduled[i][1]) {
         case "EXPLOSION":
@@ -60,7 +59,7 @@ var Simulation = (function() {
               0, 20, 40, 60, 80, 100, 140], [
                 80, 50, 20, 200, 150, 10]).sample();
               system.particles.push(new DebrisParticle(
-              sizeDist.sample(), new Tumble(0,0,0), 800, 
+              sizeDist.sample(), new Tumble(0,0,0), 800,
               800, new Distribution([0, 2*Math.PI], [1]).sample(), [1, 0, 0],[
               0, Math.cos((180/Math.PI)*inc), Math.sin((180/Math.PI)*inc)]
             ));
@@ -79,6 +78,6 @@ var Simulation = (function() {
     }
 
     //natural collisions/decay
-    
+
   }
 })();

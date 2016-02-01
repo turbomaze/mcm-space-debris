@@ -86,6 +86,8 @@ var DebrisVis = (function() {
         ALT_SCALE*particle.pos[0] + DIMS[0]/2,
         ALT_SCALE*particle.pos[1] + DIMS[1]/2
       ];
+      var zEarth2 = ALT_START*ALT_START - particle.pos[0]*particle.pos[0];
+      zEarth2 -= particle.pos[1]*particle.pos[1];
       Crush.drawPoint(ctxs[0], shifted0, psize, PART_COL);
 
       //canvas 1
