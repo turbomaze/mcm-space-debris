@@ -71,7 +71,9 @@ var Simulation = (function() {
 
   function updateCounts() {
     var leo = 0, meo = 0, geo = 0, xo = 0;
+    var totalRisk = 0;
     removalCampaign.debSys.particlesArrRisk.forEach(function(particle) {
+      totalRisk += particle.risk;
       switch(particle.bin) {
         case 0: leo++; break;
         case 1: meo++; break;
@@ -83,6 +85,7 @@ var Simulation = (function() {
     $s('#meo').innerHTML = meo; 
     $s('#geo').innerHTML = geo; 
     $s('#xo').innerHTML = xo; 
+    $s('#risk').innerHTML = totalRisk.toExponential(); 
   }
 
   /***********

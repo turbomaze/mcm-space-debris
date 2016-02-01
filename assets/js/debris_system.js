@@ -49,6 +49,7 @@ var DebrisSystem = (function() {
   }
 
   function riskCmp(a, b) {
+    if (!a || !b) return -1;
     if (a.risk !== b.risk) return a.risk - b.risk;
     else {
       return a.id < b.id ? -1 : (a.id > b.id ? 1 : 0);
@@ -81,6 +82,56 @@ var DebrisSystem = (function() {
     } 
   }
 
+  function getParticleRisk(MBars, particle) {
+    var rho = function(alt) {
+      return 0.0062*Math.pow(alt, -2.223);
+    };
+    
+    var risk = Math.pow(Math.sqrt(particle.size/Math.PI), 6.52);
+    risk *= Math.sqrt(rho(particle.alt))/MBars[particle.bin];
+    risk /= particle.alt;
+    return risk;
+  }
+
+  function assignRisk(particles) {
+    var leoMassAvg = 0;
+    var leoCount = 0;
+    var meoMassAvg = 0;
+    var meoCount = 0;
+    var geoMassAvg = 0;
+    var geoCount = 0;
+    var xoMassAvg = 0;
+    var xoCount = 0;
+    particles.forEach(function(particle) {
+      switch(particle.bin) {
+        case 0:
+          leoMassAvg += particle.mass;
+          leoCount++;
+          break;
+        case 1:
+          meoMassAvg += particle.mass;
+          meoCount++;
+          break;
+        case 2:
+          geoMassAvg += particle.mass;
+          geoCount++;
+          break;
+        case 3:
+          xoMassAvg += particle.mass;
+          xoCount++;
+          break;
+      }
+    });
+    leoMassAvg /= leoCount;
+    meoMassAvg /= meoCount;
+    geoMassAvg /= geoCount;
+    xoMassAvg /= xoCount;
+    var Mbars = [leoMassAvg, meoMassAvg, geoMassAvg, xoMassAvg];
+    particles.forEach(function(particle) {
+      particle.risk = getParticleRisk(Mbars, particle);
+    });
+    return Mbars;
+  }
 
   /***********
    * exports */
@@ -89,6 +140,7 @@ var DebrisSystem = (function() {
     this.particlesArrRisk = [];
     this.particlesArrDeorbit = [];
     this.particlesObj = {};
+    this.massAvgs = [];
 
     if (N === true) { //use real data
       var self = this;
@@ -96,20 +148,23 @@ var DebrisSystem = (function() {
         var tumbleRate = 0;
         var pero = particle['perogeeAlt'];
         var apo = particle['apogeeAlt'];
-        var alt = (pero + apo)/2;
+        var alt = pero;
         var rb = new Date();
         var size = particle['radarCross'];
         if (size === 0.000001) return; //skip these
+
         var mass = Math.pow(size, MASS_SIZE_COEFF)*MASS_SIZE_RATIO;
         var deorbit = rb.getFullYear() + (rb.getMonth()+rb.getDate()/30)/12;
         deorbit += getDeorbitTime(size, mass, alt);
         var particle = new DebrisParticle(
           alt, size, mass, deorbit, tumbleRate
         ); 
+        
         self.particlesArrRisk.push(particle);
         self.particlesArrDeorbit.push(particle);
         self.particlesObj[particle.id] = particle;
       });     
+      this.massAvgs = assignRisk(this.particlesArrRisk);
     } else { //generate data
       for (var ai = 0; ai < N; ai++) {
 		  	var particle = new DebrisParticle(
@@ -137,6 +192,8 @@ var DebrisSystem = (function() {
     this.particlesArrRisk.splice(idxRisk, 0, particle);
     this.particlesArrDeorbit.splice(idxDeorbit, 0, particle);
     this.particlesObj[particle.id] = particle;
+
+    particle.risk = getParticleRisk(this.massAvgs, particle);
 	};
   obj.prototype.removeParticle = function(particle) {
 	  var idxRisk = this.getIdxInRisk(particle);

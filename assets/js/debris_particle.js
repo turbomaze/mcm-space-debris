@@ -20,11 +20,11 @@ var DebrisParticle = (function() {
 
   /***********
    * exports */
-  var obj = function(pero, size, mass, deorbit, tumbleRate) {
+  var obj = function(alt, size, mass, deorbit, tumbleRate) {
     this.id = Math.random().toString(36);
-    this.pero = pero; //perogee
-    this.bin = this.pero < 2000 ? LEO : (
-      pero < 35700 ? MEO : (pero > 35700 && pero < 35900 ? GEO : XO) 
+    this.alt = alt; //average of apo and pero
+    this.bin = this.alt < 2000 ? LEO : (
+      alt < 35700 ? MEO : (alt > 35700 && alt < 35900 ? GEO : XO) 
     );
     this.size = size; //cross sectional area
     this.mass = mass;
@@ -32,7 +32,7 @@ var DebrisParticle = (function() {
     this.tumbleRate = tumbleRate;
 
     this.targetted = false; //scheduled for removal?
-		this.risk = Math.random(); //how risky it is
+		this.risk = 0; //how dangerous it is
   };
 
   return obj;
