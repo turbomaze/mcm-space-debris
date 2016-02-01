@@ -161,7 +161,7 @@ var DebrisSystem = (function() {
         var mass = Math.pow(size, MASS_SIZE_COEFF)*MASS_SIZE_RATIO;
         var deorbit = NOW.getFullYear() + (NOW.getMonth()+NOW.getDate()/30)/12;
         deorbit += getDeorbitTime(size, mass, alt);
-        for (var ai = 0; ai < 2; ai++) {
+        for (var ai = 0; ai < 10; ai++) {
           var particle = new DebrisParticle(
             alt, size, mass, deorbit, tumbleRate
           ); 

@@ -66,7 +66,8 @@ var Simulation = (function() {
     //update orbit decays
     var oidx = 0;
     var particlesToUpdate = [];
-    while (oidx < removalCampaign.debSys.particlesArrDeorbit.length &&
+    while (oidx < 5000 &&
+           oidx < removalCampaign.debSys.particlesArrDeorbit.length &&
            removalCampaign.debSys.particlesArrDeorbit[oidx].deorbit <= t) {
       particlesToUpdate.push(
         removalCampaign.debSys.particlesArrDeorbit[oidx].id
