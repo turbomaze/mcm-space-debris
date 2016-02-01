@@ -87,9 +87,10 @@ var RemovalCampaign = (function() {
 
   /***********
    * exports */
-  var obj = function(debSys) {
+  var obj = function(debSys, debug) {
 		this.debSys = debSys;
 		this.missionQueue = [];
+    this.debug = debug;
   };
   obj.prototype.getBestParticleToRemove = function(type) {
     var idx = 0;
@@ -105,7 +106,7 @@ var RemovalCampaign = (function() {
     while (funds > 0) {
       var particle = this.getBestParticleToRemove(type);
       if (particle === false) return;
-      console.log('Removing '+JSON.stringify(particle));
+      if (this.debug) console.log('Removing '+JSON.stringify(particle));
       cost = RemovalMethods[type].unitCost;
       cost += RemovalMethods[type].sizeCost*100*Math.sqrt(particle.size);
       this.scheduleRemoval(type, startTime + 0.04*ai, particle);
@@ -114,7 +115,7 @@ var RemovalCampaign = (function() {
     }
   };
 	obj.prototype.scheduleRemoval = function(type, time, particle) {
-    console.log(
+    if (this.debug) console.log(
       'Scheduled to remove particle '+particle.id+' at '+time
     );
     particle.targetted = true;
@@ -124,17 +125,17 @@ var RemovalCampaign = (function() {
     var mission = this.missionQueue.shift();
     var particle = this.debSys.particlesObj[mission.pid];
     if (!particle) return;
-    console.log('Running mission: '+JSON.stringify(mission));
+    if (this.debug) console.log('Running mission: '+JSON.stringify(mission));
 
     //remove according to type spec 
     var rmech = RemovalMethods[mission.type];
     if (Math.random() < rmech.successfulCapture(particle)) { //successful removal 
-      console.log('Mission success!');
+     if (this.debug) console.log('Mission success!');
       this.debSys.removeParticle(particle);
       particle.deorbit = mission.when + rmech.success.getPartDeorbitTime(); 
       this.debSys.addParticle(particle);
     } else { //failed removal
-      console.log('Mission failed.');
+      if (this.debug) console.log('Mission failed.');
 
       //particles from the device
       var totalMassSelf = 0;

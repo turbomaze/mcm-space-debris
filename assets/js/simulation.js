@@ -16,6 +16,8 @@ var Simulation = (function() {
   var TIME_STEP = 0.15;
   var PROB_LAUNCH_EA_STEP = 10*TIME_STEP;
   var SAVE_EVERY = 20;
+  var NUM_TRIALS = 10;
+  var DEBUG = false;
 
   /*************
    * constants */
@@ -31,11 +33,7 @@ var Simulation = (function() {
 	/*********************
    * working functions */
   function initSimulation() {
-    t = START_TIME, steps = 0;
-
-		var debSys = new DebrisSystem(USE_REAL_DATA, START_TIME);
-    removalCampaign = new RemovalCampaign(debSys);
-    removalCampaign.useFunds(t, TOTAL_FUNDS);
+    initVars();
 
     runExperiment(666, function(data) {
       console.log(data); 
@@ -51,6 +49,13 @@ var Simulation = (function() {
     setTimeout(function() {
       runExperiment(numSteps - 1, cb, data);
     }, 3);
+  }
+
+  function initVars() {
+    t = START_TIME, steps = 0;
+    var debSys = new DebrisSystem(USE_REAL_DATA, START_TIME);
+    removalCampaign = new RemovalCampaign(debSys, DEBUG);
+    removalCampaign.useFunds(t, TOTAL_FUNDS);
   }
 
 	function step() {
