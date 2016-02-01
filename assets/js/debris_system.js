@@ -10,6 +10,11 @@
 var DebrisSystem = (function() {
   /**********
    * config */
+  var NEW_DEB_PER_LAUNCH = 42;
+  var LAUNCH_PART_SIZE_DIST = new Distribution([.0001, .01, .1, .2],[.1269, .7769, .0962]);
+  var LAUNCH_ALT_DIST = new Distribution([
+    200, 2000, 35700, 35900 
+  ], [40, 10, 5]);
 
   /*************
    * constants */
@@ -27,6 +32,7 @@ var DebrisSystem = (function() {
     [52.21,   -45.52,  6.93,   -1.4   ], //800km
     [60.37,   -27.12,  10.42,  -1.123 ]  //900km
   ];
+  var NOW = new Date();
 
   /************
    * privates */
@@ -149,12 +155,11 @@ var DebrisSystem = (function() {
         var pero = particle['perogeeAlt'];
         var apo = particle['apogeeAlt'];
         var alt = pero;
-        var rb = new Date();
         var size = particle['radarCross'];
         if (size === 0.000001) return; //skip these
 
         var mass = Math.pow(size, MASS_SIZE_COEFF)*MASS_SIZE_RATIO;
-        var deorbit = rb.getFullYear() + (rb.getMonth()+rb.getDate()/30)/12;
+        var deorbit = NOW.getFullYear() + (NOW.getMonth()+NOW.getDate()/30)/12;
         deorbit += getDeorbitTime(size, mass, alt);
         var particle = new DebrisParticle(
           alt, size, mass, deorbit, tumbleRate
@@ -206,6 +211,19 @@ var DebrisSystem = (function() {
   };
   obj.prototype.deorbit = function(particle) {
     this.removeParticle(particle);
+  };
+  obj.prototype.addParticlesFromLaunch = function() {
+    for (var ai = 0; ai < NEW_DEB_PER_LAUNCH; ai++) {
+      var alt = LAUNCH_ALT_DIST.sample();
+      var size = LAUNCH_PART_SIZE_DIST.sample();
+      var mass = Math.pow(size, MASS_SIZE_COEFF)*MASS_SIZE_RATIO;
+      var deorbit = NOW.getFullYear() + (NOW.getMonth()+NOW.getDate()/30)/12; 
+      deorbit += getDeorbitTime(size, mass, alt);
+      var particle = new DebrisParticle(
+         alt, size, mass, deorbit, 0
+      );
+      this.addParticle(particle);
+    }
   };
 
   return obj;

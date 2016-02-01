@@ -10,10 +10,11 @@
 var Simulation = (function() {
   /**********
    * config */
-  var N = 3;
+  var N = 1000;
   var TOTAL_FUNDS = 100000;
   var START_TIME = 2016.08; //current date in years since 0
   var TIME_STEP = 0.01;
+  var PROB_LAUNCH_EA_STEP = 10*TIME_STEP;
 
   /*************
    * constants */
@@ -62,6 +63,11 @@ var Simulation = (function() {
       var particle = removalCampaign.debSys.particlesObj[pid];
       removalCampaign.debSys.deorbit(particle);
     });
+
+    //account for launches
+    if (Math.random() < PROB_LAUNCH_EA_STEP) {
+      removalCampaign.debSys.addParticlesFromLaunch();
+    }
 
     //advance time and call next one
     t += TIME_STEP;
