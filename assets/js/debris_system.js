@@ -33,6 +33,7 @@ var DebrisSystem = (function() {
     [60.37,   -27.12,  10.42,  -1.123 ]  //900km
   ];
   var NOW = new Date();
+  Math.seedrandom('hello.');
 
   /************
    * privates */
@@ -56,7 +57,7 @@ var DebrisSystem = (function() {
 
   function riskCmp(a, b) {
     if (!a || !b) return -1;
-    if (a.risk !== b.risk) return a.risk - b.risk;
+    if (a.risk !== b.risk) return b.risk - a.risk;
     else {
       return a.id < b.id ? -1 : (a.id > b.id ? 1 : 0);
     }
@@ -69,12 +70,25 @@ var DebrisSystem = (function() {
     }
   }
 
+  function getCapCmp(type) {
+    return function(a, b) {
+      if (!a || !b) return -1;
+
+      var ma = a.risk * RemovalMethods[type].successfulCapture(a);
+      var mb = b.risk * RemovalMethods[type].successfulCapture(b);
+      if (ma !== mb) return mb - ma;
+      else {
+        return a.id < b.id ? -1 : (a.id > b.id ? 1 : 0);
+      }
+    };
+  }
+
   function getDeorbitTime(size, mass, alt) {
     function doubleExp(ps, samr) {
       return ps[0]*Math.exp(ps[1]*samr) + ps[2]*Math.exp(ps[3]*samr);
     }
     
-    if (alt < 200) return 0.1; 
+    if (alt < 200) return 0.7; 
     else if (alt < 900) {
       var pl = DEORBIT_PARAMS[Math.floor(alt/100)];
       var pg = DEORBIT_PARAMS[Math.floor(alt/100)+1];
@@ -144,6 +158,7 @@ var DebrisSystem = (function() {
   var obj = function(N, startTime) {
     this.t = startTime;
     this.particlesArrRisk = [];
+    this.particlesArrCap = {};
     this.particlesArrDeorbit = [];
     this.particlesObj = {};
     this.massAvgs = [];
@@ -161,7 +176,7 @@ var DebrisSystem = (function() {
         var mass = Math.pow(size, MASS_SIZE_COEFF)*MASS_SIZE_RATIO;
         var deorbit = NOW.getFullYear() + (NOW.getMonth()+NOW.getDate()/30)/12;
         deorbit += getDeorbitTime(size, mass, alt);
-        for (var ai = 0; ai < 10; ai++) {
+        for (var ai = 0; ai < 1; ai++) {
           var particle = new DebrisParticle(
             alt, size, mass, deorbit, tumbleRate
           ); 
@@ -186,6 +201,12 @@ var DebrisSystem = (function() {
     //sort
     this.particlesArrRisk.sort(riskCmp);
     this.particlesArrDeorbit.sort(deorbitCmp);
+
+    //priority arrays
+    for (var type in RemovalMethods) {
+      this.particlesArrCap[type] = this.particlesArrRisk.slice(0);
+      this.particlesArrCap[type].sort(getCapCmp(type));
+    }
   };
   obj.prototype.getIdxInRisk = function(particle) {
     return getIdxInArr(this.particlesArrRisk, particle, riskCmp);
@@ -206,14 +227,28 @@ var DebrisSystem = (function() {
 	  var idxDeorbit = 1-this.getIdxInDeorbit(particle);
     this.particlesArrRisk.splice(idxRisk, 0, particle);
     this.particlesArrDeorbit.splice(idxDeorbit, 0, particle);
-    this.particlesObj[particle.id] = particle;
-
     particle.risk = getParticleRisk(this.massAvgs, particle);
+
+    for (var type in RemovalMethods) {
+      var idxInCap = 1 - getIdxInArr(
+        this.particlesArrCap[type], particle, getCapCmp(type)
+      );
+      this.particlesArrCap[type].splice(idxInCap, 0, particle);
+    }
+    this.particlesObj[particle.id] = particle;
 	};
   obj.prototype.removeParticle = function(particle) {
 	  var idxRisk = this.getIdxInRisk(particle);
 	  var idxDeorbit = this.getIdxInDeorbit(particle);
     if (idxRisk < 0 || idxDeorbit < 0) return;
+
+    for (var type in RemovalMethods) {
+      var idxInCap = getIdxInArr(
+        this.particlesArrCap[type], particle, getCapCmp(type)
+      );
+      if (idxInCap < 0) return;
+      this.particlesArrCap[type].splice(idxInCap, 1);
+    }
 
     this.particlesArrRisk.splice(idxRisk, 1);
     this.particlesArrDeorbit.splice(idxDeorbit, 1);
@@ -235,6 +270,9 @@ var DebrisSystem = (function() {
       );
       this.addParticle(particle);
     }
+  };
+  obj.prototype.recalculateRisk = function() {
+    this.massAvgs = assignRisk(this.particlesArrRisk);
   };
 
   return obj;

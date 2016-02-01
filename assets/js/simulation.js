@@ -11,20 +11,22 @@ var Simulation = (function() {
   /**********
    * config */
   var N = 1000;
-  var TOTAL_FUNDS = 100000;
+  var TOTAL_FUNDS = 1000*1000*1000;
   var START_TIME = 2016.08; //current date in years since 0
-  var TIME_STEP = 0.05;
+  var TIME_STEP = 0.15;
   var PROB_LAUNCH_EA_STEP = 10*TIME_STEP;
   var SAVE_EVERY = 20;
 
   /*************
    * constants */
   var USE_REAL_DATA = true;
+  Math.seedrandom('hello.');
 
   /************
    * privates */
 	var removalCampaign;
   var t, steps;
+  var recalculatedAtEnd;
 
 	/*********************
    * working functions */
@@ -35,7 +37,7 @@ var Simulation = (function() {
     removalCampaign = new RemovalCampaign(debSys);
     removalCampaign.useFunds(t, TOTAL_FUNDS);
 
-    runExperiment(2000, function(data) {
+    runExperiment(666, function(data) {
       console.log(data); 
     });
 	}
@@ -93,6 +95,7 @@ var Simulation = (function() {
 
   function getUpdatedCounts() {
     var leo = 0, meo = 0, geo = 0, xo = 0;
+    removalCampaign.debSys.recalculateRisk();
     var totalRisk = 0;
     removalCampaign.debSys.particlesArrRisk.forEach(function(particle) {
       totalRisk += particle.risk;
@@ -108,7 +111,7 @@ var Simulation = (function() {
     $s('#geo').innerHTML = geo; 
     $s('#xo').innerHTML = xo; 
     $s('#risk').innerHTML = totalRisk.toExponential(); 
-    return [totalRisk, leo, meo, geo, xo];
+    return [t, totalRisk, leo, meo, geo, xo];
   }
 
   /***********
@@ -129,4 +132,6 @@ var Simulation = (function() {
   };
 })();
 
-window.addEventListener('load', Simulation.init);
+window.addEventListener('load', function() {
+  Simulation.init();
+});

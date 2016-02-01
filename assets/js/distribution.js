@@ -12,6 +12,10 @@ var Distribution = (function() {
   /**********
    * config */
 
+  /*************
+   * constants */
+  Math.seedrandom('hello.');
+
   /************
    * privates */
   function sampleUniform(min, max) {

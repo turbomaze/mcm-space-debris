@@ -11,9 +11,13 @@ var RemovalMethods = {
   "DebrisArm": {
     massInSpace: 200,
 
+    unitCost: 30000000,
+
+    sizeCost: 0, //per cm
+
     successfulCapture: function(particle) {
       var grapple = particle.size >= .7;
-      return Math.random() < 0.95*(+grapple)*Math.pow((1-0.16), ((particle.tumbleRate-3 > 0) ? 1 : 0))*Math.pow(0.5, particle.size/250);
+      return 0.95*(+grapple)*Math.pow((1-0.16), ((particle.tumbleRate-3 > 0) ? 1 : 0));
     },
 
     success: {
@@ -38,8 +42,12 @@ var RemovalMethods = {
   "RemovalLaser": {
     massInSpace: 0,
 
+    unitCost: 0,
+
+    sizeCost: 20000, //per cm diameter target
+
     successfulCapture: function(particle) {
-      return .95*((100-particle.size > 0)? 1 : 0)*((1000-particle.pero > 0)? 1 : 0);
+      return .95*((100-particle.mass > 0)? 1 : 0)*(particle.size > 0.0001 ? 1 : 0)*((1000-particle.alt> 0)? 1 : 0);
     },
 
     success: {
@@ -58,7 +66,7 @@ var RemovalMethods = {
 
       getMassDistDeb: function(particle) {
         var dist = new Distribution(function(x) {
-          return -Math.log(0.95 - x); 
+          return Math.pow(Math.log((-1/0.2) * (x-1))*(-1/0.65), 2); 
         }); 
         return dist;
       }
@@ -72,6 +80,7 @@ var RemovalCampaign = (function() {
 
   /*************
    * constants */
+  Math.seedrandom('hello.');
 
   /************
    * privates */
@@ -82,22 +91,26 @@ var RemovalCampaign = (function() {
 		this.debSys = debSys;
 		this.missionQueue = [];
   };
-  obj.prototype.find = function(p) {
-    return this.debSys.getIdxInRisk(p);
-  }
-  obj.prototype.getBestParticleToRemove = function() {
+  obj.prototype.getBestParticleToRemove = function(type) {
     var idx = 0;
-    while (this.debSys.particlesArrRisk[idx].targetted) {
+    while (this.debSys.particlesArrCap[type][idx].targetted) {
       idx++; 
-      if (idx >= this.debSys.particlesArrRisk.length) return false;
+      if (idx >= this.debSys.particlesArrCap[type].length) return false;
     }
-    return this.debSys.particlesArrRisk[idx];
+    return this.debSys.particlesArrCap[type][idx];
   };
   obj.prototype.useFunds = function(startTime, funds) {
-    for (var ai = 0; ai < 10; ai++) {
-      var particle = this.getBestParticleToRemove();
+    var type = 'DebrisArm';
+    var ai = 0;
+    while (funds > 0) {
+      var particle = this.getBestParticleToRemove(type);
       if (particle === false) return;
-      this.scheduleRemoval('DebrisArm', startTime + ai*4, particle);
+      console.log('Removing '+JSON.stringify(particle));
+      cost = RemovalMethods[type].unitCost;
+      cost += RemovalMethods[type].sizeCost*100*Math.sqrt(particle.size);
+      this.scheduleRemoval(type, startTime + 0.04*ai, particle);
+      funds -= cost;
+      ai++;
     }
   };
 	obj.prototype.scheduleRemoval = function(type, time, particle) {
@@ -105,7 +118,7 @@ var RemovalCampaign = (function() {
       'Scheduled to remove particle '+particle.id+' at '+time
     );
     particle.targetted = true;
-		this.missionQueue.push({type: type, when: time, pid: particle.id});
+		this.missionQueue.push({type: type, when: time, pid: particle.id, risk: particle.risk});
   };
   obj.prototype.runNextMission = function() {
     var mission = this.missionQueue.shift();
@@ -115,7 +128,7 @@ var RemovalCampaign = (function() {
 
     //remove according to type spec 
     var rmech = RemovalMethods[mission.type];
-    if (rmech.successfulCapture(particle)) { //successful removal 
+    if (Math.random() < rmech.successfulCapture(particle)) { //successful removal 
       console.log('Mission success!');
       this.debSys.removeParticle(particle);
       particle.deorbit = mission.when + rmech.success.getPartDeorbitTime(); 

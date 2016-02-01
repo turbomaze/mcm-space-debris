@@ -14,6 +14,7 @@ var DebrisParticle = (function() {
   /*************
    * constants */
   var LEO = 0, MEO = 1, GEO = 2, XO = 3;
+  Math.seedrandom('hello.');
 
   /************
    * privates */
