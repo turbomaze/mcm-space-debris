@@ -1,132 +1,99 @@
 /******************\
 |   Space Debris   |
-|      System      |
+|   Debris System  |
 | @author Anthony  |
-| @author Jessy    |
 | @version 0.1     |
-| @date 2016/01/28 |
-| @edit 2016/01/30 |
+| @date 2016/01/31 |
+| @edit 2016/01/31 |
 \******************/
 
-//the DebrisSystem object models collections of particles
 var DebrisSystem = (function() {
   /**********
    * config */
-  var TIME_CONST = 0.1;
 
   /************
    * privates */
+  function getIdxInArr(arr, needle, cmpFunc) {
+    var min = 0, max = arr.length - 1;
+    while (min <= max) {
+      var mid = (min + max) >> 1;
+      var val = arr[mid];
+      var cmp = cmpFunc(val, needle);
+      if (cmp < 0) {
+        max = mid - 1;
+      } else if (cmp > 0) {
+        min = mid + 1;
+      } else {
+        return mid;
+      }
+    }
+
+    return -min - 1;
+  };
+
+  function riskCmp(a, b) {
+    if (a.risk !== b.risk) return a.risk - b.risk;
+    else {
+      return a.id < b.id ? -1 : (a.id > b.id ? 1 : 0);
+    }
+  }
+
+  function deorbitCmp(a, b) {
+    if (a.birth !== b.birth) return a.birth - b.birth;
+    else {
+      return a.id < b.id ? -1 : (a.id > b.id ? 1 : 0);
+    }
+  }
+
 
   /***********
    * exports */
-  var obj = function(altStart, angleDist, altDist, incDist, sizeDist, N) {
-    this.t = 0; //internal time
-    this.altStart = altStart; //radius of earth
-    this.particles = [];
-    this.LEO = function() {
-      var self = this;
-      return self.particles.filter(function(particle){
-        particle.pero >= 160 && particle.pero < 2000
-      });
-    };
-    this.MEO = function(){
-      var self = this;
-      return self.particles.filter(function(particle){
-        particle.pero >= 2000 && particle.pero < 35786
-      });
-    };
-    this.GEO = function(){
-      var self = this;
-      return self.particles.filter(function(particle){
-        particle.pero === 35786
-      });
-    };
+  var obj = function(N, startTime) {
+    this.t = startTime;
+    this.particlesArrRisk = [];
+    this.particlesArrDeorbit = [];
+    this.particlesObj = {};
 
-    //sample from given distributions
-    if (arguments.length > 1) {
-      this.angleDist = angleDist; //where in its orbit particles are at t=0 
-      this.altDist = altDist; //particle distance from surface
-      this.incDist = incDist; //inclination from equatorial plane
-      this.sizeDist = sizeDist; //particle size
-      this.N = N; //how many particles there are
-
-      //get the particles
-      for (var ai = 0; ai < this.N; ai++) {
-        //get particle properties
-        var size = this.sizeDist.sample();
-        var mass = 'undefined';
-        var tumble = new Tumble(0, 0, 0);
-        var angle = this.angleDist.sample();
-        var apo = this.altDist.sample();
-        var pero = this.altDist.sample();
-        var inc = this.incDist.sample();
-        var a = [1, 0, 0]; //axis 1
-        var b = [
-          0, Math.cos((180/Math.PI)*inc), Math.sin((180/Math.PI)*inc)
-        ]; //axis 2
- 
-        //add the particle
-        this.particles.push(new DebrisParticle(
-          size, mass, tumble, apo, pero, angle, a, b
-        ));
-      }
-    } else { //use data instead of distributions
-      var self = this;
-      debParticles.forEach(function(particle) {
-        var tumble = new Tumble(0, 0, 0);
-        var inc = particle['inclination'];
-        var a = [1, 0, 0]; //axis 1
-        var b = [
-          0, Math.cos((180/Math.PI)*inc), Math.sin((180/Math.PI)*inc)
-        ]; //axis 2
-        self.particles.push(
-          new DebrisParticle(
-            particle['radarCross'], tumble, particle['apogeeAlt'],
-            particle['perogeeAlt'], 2*Math.PI*Math.random(), a, b
-          )
-        ); 
-      });
+    for (var ai = 0; ai < N; ai++) {
+			var particle = new DebrisParticle(
+        0, 0, Math.random(), 0
+      );
+			this.particlesArrRisk.push(particle);
+			this.particlesObj[particle.id] = particle;
     }
+    this.particlesArrDeorbit = this.particlesArrRisk.slice(0);
 
-    this.update();
+    //sort
+    this.particlesArrRisk.sort(riskCmp);
+    this.particlesArrDeorbit.sort(deorbitCmp);
   };
-
-  //step the simulation one time-step
-  obj.prototype.update = function() {
-    this.t++;
-
-    var self = this;
-    this.particles.forEach(function(particle) {
-      particle.pos = self.getParticleLoc(particle);
-    });
+  obj.prototype.getIdxInRisk = function(particle) {
+    return getIdxInArr(this.particlesArrRisk, particle.risk, riskCmp);
   };
+  obj.prototype.getIdxInDeorbit = function(particle) {
+    return getIdxInArr(this.particlesArrDeorbit, particle.birth, deorbitCmp);
+  };
+	obj.prototype.addParticle = function(particle) {
+	  var idxRisk = -this.getIdxInRisk(particle); //neg because it's not in there
+	  var idxDeorbit = -this.getIdxInDeorbit(particle);
+    this.particlesArrRisk.splice(idxRisk, 0, particle);
+    this.particlesArrDeorbit.splice(idxDeorbit, 0, particle);
+    this.particlesObj[particle.id] = particle;
+	};
+  obj.prototype.removeParticle = function(particle) {
+	  var idxRisk = this.getIdxInRisk(particle);
+	  var idxDeorbit = this.getIdxInDeorbit(particle);
+    if (idxRisk < 0 || idxDeorbit) return;
 
-  //get the location of a particle at the given time
-  obj.prototype.getParticleLoc = function(particle) {
-    var speed = Math.sqrt(2/(particle.apo+particle.pero));
-    var T = speed*TIME_CONST*this.t;
-    var cosAngT = Math.cos(particle.angle + T);
-    var sinAngT = Math.sin(particle.angle + T);
-    var apoAndRad = particle.apo + this.altStart;
-    var peroAndRad = particle.pero + this.altStart;
-    var x = apoAndRad*particle.a[0]*cosAngT +
-            peroAndRad*particle.b[0]*sinAngT;
-    var y = apoAndRad*particle.a[1]*cosAngT +
-            peroAndRad*particle.b[1]*sinAngT;
-    var z = apoAndRad*particle.a[2]*cosAngT +
-            peroAndRad*particle.b[2]*sinAngT;
-    return [x, y, z];
+    this.particlesArrRisk.splice(idxRisk, 1);
+    this.particlesArrDeorbit.splice(idxDeorbit, 1);
+    delete this.particlesObj[particle.id];
+  };
+  obj.prototype.decayOrbit = function(particle) {
+    this.removeParticle(particle);
+    particle.decayOrbit();
+    if (particle.bin >= 0) this.addParticle(particle);
   };
 
   return obj;
 })();
-
-
-
-
-
-
-
-
-
-
