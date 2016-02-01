@@ -13,8 +13,9 @@ var Simulation = (function() {
   var N = 1000;
   var TOTAL_FUNDS = 100000;
   var START_TIME = 2016.08; //current date in years since 0
-  var TIME_STEP = 0.01;
+  var TIME_STEP = 0.05;
   var PROB_LAUNCH_EA_STEP = 10*TIME_STEP;
+  var SAVE_EVERY = 20;
 
   /*************
    * constants */
@@ -34,13 +35,27 @@ var Simulation = (function() {
     removalCampaign = new RemovalCampaign(debSys);
     removalCampaign.useFunds(t, TOTAL_FUNDS);
 
-		step();
+    runExperiment(2000, function(data) {
+      console.log(data); 
+    });
 	}
+
+  function runExperiment(numSteps, cb, data) {
+    if (numSteps === 0) return cb(data);
+    data = arguments.length === 2 ? [] : data;
+    var ret = step();
+    if (ret.length > 0) data.push(ret);
+
+    setTimeout(function() {
+      runExperiment(numSteps - 1, cb, data);
+    }, 3);
+  }
 
 	function step() {
     //update the display
     $s('#time').innerHTML = round(t, 2); 
-    if (steps % 10 === 0) updateCounts();
+    var ret = [];
+    if (steps % SAVE_EVERY === 0) ret = getUpdatedCounts();
 
     //run missions
     while (removalCampaign.missionQueue.length > 0 &&
@@ -72,10 +87,10 @@ var Simulation = (function() {
     //advance time and call next one
     t += TIME_STEP;
     steps++;
-    setTimeout(step, 10);
+    return ret;
 	}
 
-  function updateCounts() {
+  function getUpdatedCounts() {
     var leo = 0, meo = 0, geo = 0, xo = 0;
     var totalRisk = 0;
     removalCampaign.debSys.particlesArrRisk.forEach(function(particle) {
@@ -92,6 +107,7 @@ var Simulation = (function() {
     $s('#geo').innerHTML = geo; 
     $s('#xo').innerHTML = xo; 
     $s('#risk').innerHTML = totalRisk.toExponential(); 
+    return [totalRisk, leo, meo, geo, xo];
   }
 
   /***********

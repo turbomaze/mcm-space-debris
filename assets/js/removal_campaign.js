@@ -9,7 +9,7 @@
 
 var RemovalMethods = {
   "DebrisArm": {
-    massInSpace: 10,
+    massInSpace: 200,
 
     successfulCapture: function(particle) {
       var grapple = particle.size >= .7;
@@ -23,18 +23,14 @@ var RemovalMethods = {
     },
 
     fail: {
-      getMassDistSelf: (function(self) {
-        return function() {
-          var dist = new Distribution([
-            self.massInSpace, self.massInSpace
-          ], [1]);
-          return dist;
-        };
-      })(this),
+      getMassDistSelf: function(selfMass) {
+        var dist = new Distribution([selfMass, selfMass], [1]); 
+        return dist;
+      },
 
       getMassDistDeb: function(particle) {
         var dist = new Distribution([particle.mass, particle.mass], [1]); 
-        return particle.mass;
+        return dist;
       }
     }
   },
@@ -61,8 +57,10 @@ var RemovalMethods = {
       })(this),
 
       getMassDistDeb: function(particle) {
-        var dist = new Distribution([particle.mass, particle.mass], [1]); 
-        return particle.mass;
+        var dist = new Distribution(function(x) {
+          return -Math.log(0.95 - x); 
+        }); 
+        return dist;
       }
     }
   }
@@ -71,6 +69,9 @@ var RemovalMethods = {
 var RemovalCampaign = (function() {
   /**********
    * config */
+
+  /*************
+   * constants */
 
   /************
    * privates */
@@ -108,8 +109,44 @@ var RemovalCampaign = (function() {
   };
   obj.prototype.runNextMission = function() {
     var mission = this.missionQueue.shift();
+    var particle = this.debSys.particlesObj[mission.pid];
+    if (!particle) return;
     console.log('Running mission: '+JSON.stringify(mission));
-    //remove according to type spec   
+
+    //remove according to type spec 
+    var rmech = RemovalMethods[mission.type];
+    if (rmech.successfulCapture(particle)) { //successful removal 
+      console.log('Mission success!');
+      this.debSys.removeParticle(particle);
+      particle.deorbit = mission.when + rmech.success.getPartDeorbitTime(); 
+      this.debSys.addParticle(particle);
+    } else { //failed removal
+      console.log('Mission failed.');
+
+      //particles from the device
+      var totalMassSelf = 0;
+      var massDistSelf = rmech.fail.getMassDistSelf(rmech.massInSpace);
+      while (totalMassSelf < 0.9*rmech.massInSpace) {
+        var newMass = massDistSelf.sample();
+        totalMassSelf += newMass;
+        var newDebris = this.debSys.createNewParticle(
+          particle.alt, newMass, particle.tumbleRate
+        );
+        this.debSys.addParticle(newDebris);
+      }
+
+      //particles from the debris itself
+      var totalMassDeb = 0;
+      var massDistDeb = rmech.fail.getMassDistDeb(particle);
+      while (totalMassDeb < 0.9*particle.mass) {
+        var newMass = massDistDeb.sample();
+        totalMassDeb += newMass;
+        var newDebris = this.debSys.createNewParticle(
+          particle.alt, newMass, particle.tumbleRate
+        );
+        this.debSys.addParticle(newDebris);
+      }
+    }
   };
 
   return obj;

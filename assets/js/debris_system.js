@@ -161,13 +161,15 @@ var DebrisSystem = (function() {
         var mass = Math.pow(size, MASS_SIZE_COEFF)*MASS_SIZE_RATIO;
         var deorbit = NOW.getFullYear() + (NOW.getMonth()+NOW.getDate()/30)/12;
         deorbit += getDeorbitTime(size, mass, alt);
-        var particle = new DebrisParticle(
-          alt, size, mass, deorbit, tumbleRate
-        ); 
-        
-        self.particlesArrRisk.push(particle);
-        self.particlesArrDeorbit.push(particle);
-        self.particlesObj[particle.id] = particle;
+        for (var ai = 0; ai < 2; ai++) {
+          var particle = new DebrisParticle(
+            alt, size, mass, deorbit, tumbleRate
+          ); 
+          
+          self.particlesArrRisk.push(particle);
+          self.particlesArrDeorbit.push(particle);
+          self.particlesObj[particle.id] = particle;
+        }
       });     
       this.massAvgs = assignRisk(this.particlesArrRisk);
     } else { //generate data
@@ -191,6 +193,14 @@ var DebrisSystem = (function() {
   obj.prototype.getIdxInDeorbit = function(particle) {
     return getIdxInArr(this.particlesArrDeorbit, particle, deorbitCmp);
   };
+  obj.prototype.createNewParticle = function(alt, mass, tumbleRate) {
+    var size = Math.pow(mass,.1/MASS_SIZE_COEFF)/MASS_SIZE_RATIO;
+    var deorbit = getDeorbitTime(size, mass, alt);
+    var newDebris = new DebrisParticle(
+      alt, size, mass, deorbit, tumbleRate 
+    );
+    return newDebris;
+  };
 	obj.prototype.addParticle = function(particle) {
 	  var idxRisk = 1-this.getIdxInRisk(particle); //minus cuz it's not in there
 	  var idxDeorbit = 1-this.getIdxInDeorbit(particle);
@@ -210,6 +220,7 @@ var DebrisSystem = (function() {
     delete this.particlesObj[particle.id];
   };
   obj.prototype.deorbit = function(particle) {
+    if (!particle) return;
     this.removeParticle(particle);
   };
   obj.prototype.addParticlesFromLaunch = function() {

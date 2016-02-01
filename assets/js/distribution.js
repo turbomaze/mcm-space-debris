@@ -21,20 +21,26 @@ var Distribution = (function() {
   /***********
    * exports */
   var obj = function(vals, probs) {
-    this.vals = vals; 
+    this.ITS = typeof vals === 'function';
+    this.vals = this.ITS ? false : vals; 
     //normalize the probabilities so they sum to 1
-    var sum = probs.reduce(function(cum, prob){return cum+prob;});
-    this.probs = probs.map(function(prob){return prob/sum;}); 
+    var sum = this.ITS ? false : probs.reduce(function(cum, prob){return cum+prob;});
+    this.probs = this.ITS ? false : probs.map(function(prob){return prob/sum;}); 
+    this.func = this.ITS ? vals : false;
   };
   obj.prototype.sample = function() {
-    var p = Math.random();
-    for (var ai = 0; ai < this.probs.length; ai++) {
-      if (p < this.probs[ai]) return sampleUniform(this.vals[ai], this.vals[ai+1]); 
-      else p -= this.probs[ai];
+    if (this.ITS) {
+      return this.func(Math.random());
+    } else {
+      var p = Math.random();
+      for (var ai = 0; ai < this.probs.length; ai++) {
+        if (p < this.probs[ai]) return sampleUniform(this.vals[ai], this.vals[ai+1]); 
+        else p -= this.probs[ai];
+      }
+      return sampleUniform(
+        this.vals[this.vals.length-2], this.vals[this.vals.length-1]
+      );
     }
-    return sampleUniform(
-      this.vals[this.vals.length-2], this.vals[this.vals.length-1]
-    );
   };
 
   return obj;
