@@ -16,7 +16,7 @@ var Simulation = (function() {
   var TIME_STEP = 0.15;
   var PROB_LAUNCH_EA_STEP = 10*TIME_STEP;
   var SAVE_EVERY = 20;
-  var NUM_TRIALS = 2;
+  var NUM_TRIALS = 25;
   var DEBUG = false;
 
   /*************
@@ -66,13 +66,43 @@ var Simulation = (function() {
   function initSimulation() {
     initVars();
 
+		var startRiskTotal = 0;
+		var endRiskTotal = 0;
+		var totalData = {};
+		totalData.start = START_TIME;
+		totalData.totalFunds = TOTAL_FUNDS;
+		totalData.strat = 'DebrisArm';
+		totalData.timeStep = TIME_STEP;
+		totalData.probLaunchEaStep = PROB_LAUNCH_EA_STEP;
+		var idx = 0;
 		asyncLoop(NUM_TRIALS, function(loop) {
       runExperiment(666, function(data) {
         console.log(data); 
+
+				totalData['trial-'+idx] = data;
+				idx++;
+				startRiskTotal += data[0][1];
+				endRiskTotal += data[data.length-1][1];
+
         initVars();
 				loop.next();
       });
-    }, function() {console.log('Experiment over.');});
+    }, function() {
+			console.log('Experiment over.');
+		  totalData['startRisk'] = startRiskTotal/NUM_TRIALS;
+		  totalData['endRisk'] = endRiskTotal/NUM_TRIALS;
+			console.log('Average start risk: '+totalData['startRisk']);
+			console.log('Average end risk: '+totalData['endRisk']);
+
+			var json = JSON.stringify(totalData);
+  	  var blob = new Blob([json], {type: 'application/json'});
+      var url  = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.download    = 'experiment_data.json';
+      a.href        = url;
+      a.textContent = 'Download experiment_data.json';	
+			document.body.appendChild(a);
+		});
 	}
 
   function runExperiment(numSteps, cb, data) {

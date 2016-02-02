@@ -101,16 +101,27 @@ var RemovalCampaign = (function() {
     return this.debSys.particlesArrCap[type][idx];
   };
   obj.prototype.useFunds = function(startTime, funds) {
-    var type = 'DebrisArm';
-    var ai = 0;
-    while (funds > 0) {
-      var particle = this.getBestParticleToRemove(type);
+		var self = this;
+		function scheduleMethod(type) {
+		  var particle = self.getBestParticleToRemove(type);
       if (particle === false) return;
-      if (this.debug) console.log('Removing '+JSON.stringify(particle));
-      cost = RemovalMethods[type].unitCost;
+      if (self.debug) console.log('Removing '+JSON.stringify(particle));
+      var cost = RemovalMethods[type].unitCost;
       cost += RemovalMethods[type].sizeCost*100*Math.sqrt(particle.size);
-      this.scheduleRemoval(type, startTime + 0.04*ai, particle);
-      funds -= cost;
+      self.scheduleRemoval(type, startTime + 0.04*ai, particle);
+	    return cost;
+    }
+
+		var maxNumArms = 10;
+		var ai = 0;
+		while (ai < maxNumArms && funds > 0) {
+		  funds -= scheduleMethod('DebrisArm');	
+			ai++;
+    }
+
+		//the rest will be lasers
+    while (funds > 0) {
+      funds -= scheduleMethod('RemovalLaser');
       ai++;
     }
   };
